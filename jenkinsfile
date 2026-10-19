@@ -1,36 +1,30 @@
 pipeline {
-    agent {
-        docker {
-            
-            image '://microsoft.com'
-            
-            args '-v /var/run/docker.sock:/var/run/docker.sock -u 0:0'
-        }
-    }
+    agent any 
 
     environment {
         DOTNET_CLI_TELEMETRY_OPTOUT = '1'
         DOCKER_HOST                 = 'unix:///var/run/docker.sock'
+        // Definieer de herbruikbare .NET 10 container opdracht
+        DOTNET_RUNNER               = 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v bld-cache:/root/.nuget/packages -v .:/app -w /app ://microsoft.com'
     }
 
     stages {
-        // STAP 1: Project herstellen en compileren (pakt automatisch dotnet-demo.slnx)
+        // STAP 1: Project herstellen en compileren binnen de .NET 10 container
         stage('Build Project') {
             steps {
-                sh 'dotnet restore'
-                sh 'dotnet build --configuration Release --no-restore'
+                sh "${DOTNET_RUNNER} dotnet restore"
+                sh "${DOTNET_RUNNER} dotnet build --configuration Release --no-restore"
             }
         }
 
-        // STAP 2: De testfile (TodoApp.Tests) uitvoeren met Testcontainers
+        // STAP 2: De testfile uit de repo uitvoeren (Testcontainers start MariaDB op de host via socket)
         stage('Run Integration Tests') {
             steps {
-                // Voert xUnit tests uit en genereert een testrapportagebestand
-                sh 'dotnet test --configuration Release --no-build --logger "trx;LogFileName=test_results.trx"'
+                sh "${DOTNET_RUNNER} dotnet test --configuration Release --no-build --logger 'trx;LogFileName=test_results.trx'"
             }
             post {
                 always {
-                    // Visualiseer de testresultaten direct in Jenkins
+                    // Visualiseer de testresultaten direct in de Jenkins UI
                     mstest testResultsFile: '**/*.trx', keepLongStdio: true
                 }
             }
