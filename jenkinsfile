@@ -1,0 +1,39 @@
+pipeline {
+    agent {
+        docker {
+            
+            image '://microsoft.com'
+            
+            args '-v /var/run/docker.sock:/var/run/docker.sock -u 0:0'
+        }
+    }
+
+    environment {
+        DOTNET_CLI_TELEMETRY_OPTOUT = '1'
+        DOCKER_HOST                 = 'unix:///var/run/docker.sock'
+    }
+
+    stages {
+        // STAP 1: Project herstellen en compileren (pakt automatisch dotnet-demo.slnx)
+        stage('Build Project') {
+            steps {
+                sh 'dotnet restore'
+                sh 'dotnet build --configuration Release --no-restore'
+            }
+        }
+
+        // STAP 2: De testfile (TodoApp.Tests) uitvoeren met Testcontainers
+        stage('Run Integration Tests') {
+            steps {
+                // Voert xUnit tests uit en genereert een testrapportagebestand
+                sh 'dotnet test --configuration Release --no-build --logger "trx;LogFileName=test_results.trx"'
+            }
+            post {
+                always {
+                    // Visualiseer de testresultaten direct in Jenkins
+                    mstest testResultsFile: '**/*.trx', keepLongStdio: true
+                }
+            }
+        }
+    }
+}
