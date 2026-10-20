@@ -35,6 +35,12 @@ pipeline {
                 '''
             }
         }
+        stage('Wait for Database') {
+        steps {
+            sh sleep 40
+            }
+        }
+
 
         stage('Restore') {
             steps {
