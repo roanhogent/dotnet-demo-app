@@ -32,15 +32,11 @@ pipeline {
             steps {
                 sh '''
                     docker compose -f "$COMPOSE_FILE" up -d todoappdb
+                    sleep 30
                 '''
             }
         }
-        stage('Wait for Database') {
-        steps {
-            sh sleep 40
-            }
-        }
-
+        
 
         stage('Restore') {
             steps {
