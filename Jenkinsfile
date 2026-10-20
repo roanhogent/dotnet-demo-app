@@ -11,19 +11,24 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
+        
+        stage('Remove Existing Containers') {
             steps {
-                
-
                 sh '''
-            if docker container inspect todoapp >/dev/null 2>&1; then
-                echo "Removing existing todoapp container..."
-                docker rm -f todoapp
-            else
-                echo "No existing todoapp container found."
-            fi
-        '''
+                    echo "Checking existing application container..."
+                    if docker container inspect todoapp >/dev/null 2>&1; then
+                        docker rm -f todoapp
+                    else
+                        echo "No existing todoapp container found."
+                    fi
 
+                    echo "Checking existing database container..."
+                    if docker container inspect todoappdb >/dev/null 2>&1; then
+                        docker rm -f todoappdb
+                    else
+                        echo "No existing todoappdb container found."
+                    fi
+                '''
             }
         }
 
