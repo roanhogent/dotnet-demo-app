@@ -13,15 +13,17 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
-            }
-        }
+                
 
-        stage('Check Tools') {
-            steps {
-                sh 'dotnet --info'
-                sh 'docker version'
-                sh 'docker compose version'
+                sh '''
+            if docker container inspect todoapp >/dev/null 2>&1; then
+                echo "Removing existing todoapp container..."
+                docker rm -f todoapp
+            else
+                echo "No existing todoapp container found."
+            fi
+        '''
+
             }
         }
 
